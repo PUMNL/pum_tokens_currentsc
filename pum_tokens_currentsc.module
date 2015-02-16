@@ -1,0 +1,70 @@
+<?php
+/**
+ * Make token available to drupal
+ */
+
+/**
+ * Implements hook_token_info().
+ */
+function pum_tokens_currentsc_token_info()
+{
+    $info = array();
+    $info['tokens']['user']['sector-coordinator'] = array(
+        'name' => t('Sector coordinator'),
+        'description' => t('Sector coordinator of current logged in user')
+    );
+    return $info;
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function pum_tokens_currentsc_tokens($type, $tokens, array $data = array(), array $options = array())
+{
+    if ($type != 'user') {
+        return;
+    }
+
+    $sanitize = !empty($options['sanitize']);
+
+    $replacements = array();
+    foreach($tokens as $name => $original) {
+        switch ($name) {
+            case 'sector-coordinator':
+                $sc = _pum_tokens_currentsc_find_sc();
+                $replacements[$original] =  $sanitize ? check_plain($sc) : $sc;
+                break;
+        }
+    }
+
+    return $replacements;
+}
+
+/**
+ * Returns the name of the current SC
+ */
+function _pum_tokens_currentsc_find_sc() {
+    $return =  'unknown';
+
+    civicrm_initialize();
+    $session = CRM_Core_Session::singleton();
+
+    if (!$session->get('userID')) {
+        return $return;
+    }
+
+    $enhancedTags = CRM_Cvmutation_EnhancedTags::singleton();
+    $sc_contact_id = $enhancedTags->get_sector_coordinator_id($session->get('userID'));
+    if (!$sc_contact_id) {
+        return $return;
+    }
+
+    try {
+        return civicrm_api3('Contact', 'getvalue', array('return' => 'display_name', 'id' => $sc_contact_id));
+    } catch (Exception $e) {
+        return $return;
+    }
+
+
+    return $return;
+}

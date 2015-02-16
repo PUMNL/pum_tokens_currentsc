@@ -1,0 +1,6 @@
+name = PUM SC Token
+description = Token for showing the currnt SC of the loggend in user
+core = 7.x
+package = PUM
+dependencies[] = civicrm (>=4.4)
+dependencies[] = token
